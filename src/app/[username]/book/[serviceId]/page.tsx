@@ -2,6 +2,40 @@ import { prisma } from "@/lib/prisma";
 import Stripe from "stripe";
 import { notFound, redirect } from "next/navigation";
 import styles from "./page.module.css";
+import { Metadata } from "next";
+
+export async function generateMetadata({ 
+  params 
+}: { 
+  params: { username: string, serviceId: string } 
+}): Promise<Metadata> {
+  const service = await prisma.service.findUnique({
+    where: { id: params.serviceId },
+    include: { creator: true }
+  });
+
+  if (!service) {
+    return { title: "Service Not Found" };
+  }
+
+  const title = `Book ${service.title} with ${service.creator.name || service.creator.username}`;
+  const description = service.description || `Book a ${service.duration}-minute session with ${service.creator.name || service.creator.username} for $${service.price}.`;
+
+  return {
+    title,
+    description,
+    openGraph: {
+      title,
+      description,
+      type: "website",
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+    }
+  };
+}
 
 export default async function BookServicePage({ 
   params 
@@ -46,9 +80,8 @@ export default async function BookServicePage({
     
     if (service!.price > 0) {
       const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string, {
-        apiVersion: "2023-10-16",
+        apiVersion: "2023-10-16" as any, // Bypass TS error for stripe apiVersion mismatch
       });
-      
       const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000';
       
       const session = await stripe.checkout.sessions.create({
@@ -58,7 +91,7 @@ export default async function BookServicePage({
             currency: 'usd',
             product_data: {
               name: service!.title,
-              description: `Booking with ${user.name || user.username}`
+              description: `Booking with ${user!.name || user!.username}`
             },
             unit_amount: Math.round(service!.price * 100),
           },

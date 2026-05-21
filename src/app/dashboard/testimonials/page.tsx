@@ -1,5 +1,5 @@
 import { getServerSession } from "next-auth";
-import { authOptions } from "../../api/auth/[...nextauth]/route";
+import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 
@@ -23,28 +23,34 @@ export default async function TestimonialsPage() {
     const content = formData.get("content") as string;
     const rating = parseInt(formData.get("rating") as string, 10);
     
-    await prisma.testimonial.create({
-      data: {
-        authorName,
-        authorInfo,
-        content,
-        rating,
-        creatorId: (session!.user as any).id
-      }
-    });
-    
-    revalidatePath("/dashboard/testimonials");
+    try {
+      await prisma.testimonial.create({
+        data: {
+          authorName,
+          authorInfo,
+          content,
+          rating,
+          creatorId: (session!.user as any).id
+        }
+      });
+      revalidatePath("/dashboard/testimonials");
+    } catch (error) {
+      console.error("Failed to create testimonial:", error);
+    }
   }
 
   async function deleteTestimonial(formData: FormData) {
     "use server";
     const id = formData.get("id") as string;
     
-    await prisma.testimonial.delete({
-      where: { id }
-    });
-    
-    revalidatePath("/dashboard/testimonials");
+    try {
+      await prisma.testimonial.delete({
+        where: { id }
+      });
+      revalidatePath("/dashboard/testimonials");
+    } catch (error) {
+      console.error("Failed to delete testimonial:", error);
+    }
   }
 
   return (
