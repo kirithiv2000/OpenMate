@@ -1,0 +1,112 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// NextAuth Required Models
+model Account {
+  id                 String  @id @default(cuid())
+  userId             String
+  type               String
+  provider           String
+  providerAccountId  String
+  refresh_token      String?
+  access_token       String?
+  expires_at         Int?
+  token_type         String?
+  scope              String?
+  id_token           String?
+  session_state      String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+  
+  // Topmate specific fields
+  username      String?   @unique
+  bio           String?
+  
+  accounts      Account[]
+  sessions      Session[]
+  services      Service[]
+  bookings      Booking[]
+  testimonials  Testimonial[]
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// Topmate Alternative Specific Models
+
+model Service {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  price       Float    @default(0)
+  duration    Int      // Duration in minutes
+  type        String   @default("call") // "call" or "query"
+  
+  creatorId   String
+  creator     User     @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  
+  bookings    Booking[]
+}
+
+model Booking {
+  id          String   @id @default(cuid())
+  serviceId   String
+  service     Service  @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  
+  userId      String?  // If booked by a registered user
+  user        User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  
+  guestName   String?
+  guestEmail  String?
+  
+  startTime   DateTime
+  endTime     DateTime
+  
+  status          String   @default("pending") // pending, confirmed, cancelled
+  stripeSessionId String?  // To track the Stripe checkout session
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model Testimonial {
+  id          String   @id @default(cuid())
+  authorName  String
+  authorInfo  String?  // e.g. "CEO at TechCorp" or "@twitterhandle"
+  content     String
+  rating      Int      @default(5) // out of 5
+  
+  creatorId   String
+  creator     User     @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  
+  createdAt   DateTime @default(now())
+}

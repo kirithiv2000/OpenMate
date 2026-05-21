@@ -1,0 +1,19 @@
+version: '3.8'
+services:
+  openmate:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: openmate_app
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - NEXTAUTH_URL=http://localhost:3000
+      - NEXTAUTH_SECRET=changethissecret1234567890
+      - DATABASE_URL=file:./dev.db
+      - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY}
+      - NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=${NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY}
+    volumes:
+      - ./dev.db:/app/dev.db
+    restart: always
