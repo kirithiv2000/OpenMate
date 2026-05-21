@@ -1,5 +1,5 @@
 import { getServerSession } from "next-auth";
-import { authOptions } from "../../api/auth/[...nextauth]/route";
+import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import CopyLinkButton from "./CopyLinkButton";
@@ -28,29 +28,35 @@ export default async function ServicesPage() {
     const duration = parseInt(formData.get("duration") as string, 10);
     const type = formData.get("type") as string;
     
-    await prisma.service.create({
-      data: {
-        title,
-        description,
-        price,
-        duration,
-        type,
-        creatorId: (session?.user as any)?.id
-      }
-    });
-    
-    revalidatePath("/dashboard/services");
+    try {
+      await prisma.service.create({
+        data: {
+          title,
+          description,
+          price,
+          duration,
+          type,
+          creatorId: (session?.user as any)?.id
+        }
+      });
+      revalidatePath("/dashboard/services");
+    } catch (error) {
+      console.error("Failed to create service:", error);
+    }
   }
 
   async function deleteService(formData: FormData) {
     "use server";
     const id = formData.get("id") as string;
     
-    await prisma.service.delete({
-      where: { id }
-    });
-    
-    revalidatePath("/dashboard/services");
+    try {
+      await prisma.service.delete({
+        where: { id }
+      });
+      revalidatePath("/dashboard/services");
+    } catch (error) {
+      console.error("Failed to delete service:", error);
+    }
   }
 
   return (

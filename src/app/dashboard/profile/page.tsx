@@ -1,5 +1,5 @@
 import { getServerSession } from "next-auth";
-import { authOptions } from "../../api/auth/[...nextauth]/route";
+import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 
@@ -21,12 +21,16 @@ export default async function ProfileSettingsPage() {
     const bio = formData.get("bio") as string;
     const username = formData.get("username") as string;
     
-    await prisma.user.update({
-      where: { id: (session?.user as any)?.id },
-      data: { name, bio, username }
-    });
-    
-    revalidatePath("/dashboard/profile");
+    try {
+      await prisma.user.update({
+        where: { id: (session?.user as any)?.id },
+        data: { name, bio, username: username.toLowerCase().replace(/[^a-z0-9]/g, '') }
+      });
+      revalidatePath("/dashboard/profile");
+      revalidatePath(`/${username}`);
+    } catch (error) {
+      console.error("Failed to update profile:", error);
+    }
   }
 
   return (

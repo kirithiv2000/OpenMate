@@ -44,7 +44,9 @@ model User {
   
   // Topmate specific fields
   username      String?   @unique
+  password      String?
   bio           String?
+  viewCount     Int       @default(0)
   
   accounts      Account[]
   sessions      Session[]

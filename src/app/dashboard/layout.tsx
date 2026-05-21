@@ -1,8 +1,9 @@
 import { getServerSession } from "next-auth/next";
-import { authOptions } from "../api/auth/[...nextauth]/route";
+import { authOptions } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import styles from "./layout.module.css";
+import LogoutButton from "./LogoutButton";
 
 export default async function DashboardLayout({
   children,
@@ -27,9 +28,10 @@ export default async function DashboardLayout({
         </nav>
         <div className={styles.user}>
           <div className={styles.avatar}>{(session.user as any)?.username?.charAt(0).toUpperCase()}</div>
-          <div className={styles.userInfo}>
+          <div className={styles.userInfo} style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
             <div className={styles.username}>{(session.user as any)?.username}</div>
             <a href={`/${(session.user as any)?.username}`} target="_blank" className={styles.publicLink}>View Public Page</a>
+            <LogoutButton />
           </div>
         </div>
       </aside>

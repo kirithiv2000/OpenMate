@@ -3,6 +3,38 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import styles from "./page.module.css";
 
+import { Metadata } from "next";
+
+export async function generateMetadata({ params }: { params: { username: string } }): Promise<Metadata> {
+  const user = await prisma.user.findUnique({
+    where: { username: params.username }
+  });
+
+  if (!user) {
+    return {
+      title: "User Not Found",
+    };
+  }
+
+  const title = `${user.name || user.username} on OpenMate`;
+  const description = user.bio || `Book 1:1 calls and services with ${user.name || user.username} on OpenMate.`;
+
+  return {
+    title,
+    description,
+    openGraph: {
+      title,
+      description,
+      type: "profile",
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+    }
+  };
+}
+
 export default async function PublicProfilePage({ params }: { params: { username: string } }) {
   const { username } = params;
 
@@ -20,6 +52,12 @@ export default async function PublicProfilePage({ params }: { params: { username
     notFound();
   }
 
+  // Increment view count
+  await prisma.user.update({
+    where: { id: user.id },
+    data: { viewCount: { increment: 1 } }
+  });
+
   return (
     <div style={{ minHeight: '100vh', backgroundColor: 'var(--bg-color)' }}>
       <header className={styles.profileHeader}>
@@ -28,6 +66,11 @@ export default async function PublicProfilePage({ params }: { params: { username
         </div>
         <h1 className={`${styles.name} animate-fade-in`} style={{ animationDelay: '0.1s' }}>{user.name || user.username}</h1>
         <p className={`${styles.bio} animate-fade-in`} style={{ animationDelay: '0.2s' }}>{user.bio || "No bio provided."}</p>
+        
+        <div className="animate-fade-in" style={{ animationDelay: '0.25s', marginTop: '1rem', color: 'var(--text-secondary)', fontSize: '0.875rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+          {user.viewCount + 1} Profile Views
+        </div>
       </header>
 
       <main className={`${styles.servicesSection} animate-fade-in`} style={{ animationDelay: '0.3s' }}>
